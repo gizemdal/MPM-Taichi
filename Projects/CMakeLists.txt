@@ -4,3 +4,4 @@ if(CREATE_LOCAL_MAKEFILES)
 endif()
 
 add_subdirectory(partio_example)
+add_subdirectory(eigen_example)
