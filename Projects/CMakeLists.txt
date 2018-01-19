@@ -3,4 +3,4 @@ if(CREATE_LOCAL_MAKEFILES)
   configure_file(${CISPBA_SOURCE_DIR}/Scripts/Makefile.in ${CMAKE_CURRENT_SOURCE_DIR}/Makefile @ONLY)
 endif()
 
-add_subdirectory(example)
+add_subdirectory(partio_example)

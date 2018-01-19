@@ -4,6 +4,6 @@ if(CREATE_LOCAL_MAKEFILES)
   configure_file(${CISPBA_SOURCE_DIR}/Scripts/Makefile.in ${CMAKE_CURRENT_SOURCE_DIR}/Makefile @ONLY)
 endif()
 
-add_cispba_executable(example example.cpp)
+add_cispba_executable(partio_example main.cpp)
 
-target_link_libraries(example partio)
+target_link_libraries(partio_example partio)
