@@ -32,7 +32,7 @@ void writePartio(const std::string& particleFile)
 
 int main(int argc, char* argv[])
 {
-    std::string file="test.pda";
+    std::string file="test.bgeo";
     writePartio<T,dim>(file);
     
     return 0;
