@@ -5,3 +5,4 @@ endif()
 
 add_subdirectory(partio_example)
 add_subdirectory(eigen_example)
+add_subdirectory(mass_spring)
