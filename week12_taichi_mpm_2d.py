@@ -4,7 +4,7 @@ import numpy as np
 ti.init(arch=ti.gpu) # Try to run on GPU
 
 quality = 1 # Use a larger value for higher-res simulations - setting this to 4 gives us 144000 particles
-n_particles, n_grid = 9000 * quality ** 2, 128 * quality
+n_particles, n_grid = 40000 * quality ** 2, 128 * quality
 dx, inv_dx = 1 / n_grid, float(n_grid)
 dt = 1e-4 / quality
 p_vol, p_rho = (dx * 0.5)**2, 1
@@ -73,7 +73,7 @@ def substep():
       dweight[1] = inv_dx * w[i][0] * dw[j][1] * w[k][2]
       dweight[2] = inv_dx * w[i][0] * w[j][1] * dw[k][2]
       
-      force = -p_vol * kirchoff @ dweight
+      force = -p_vol * kirchoff @ dweight # This is doing Step 6: Add elastic force
 
       # Step 2 & 3: Transfer mass and momentum from particles to grid
       grid_v[base + offset] += p_mass * weight * (v[p] + C[p] @ dpos) #momentum transfer
@@ -92,8 +92,6 @@ def substep():
       #add force from mouse
       #dist = attractor_pos[None] - dx * ti.Vector([i, j, k])
       #grid_v[i, j, k] += dist / (0.01 + dist.norm()) * attractor_strength[None] * dt * 100
-
-      # TODO : ADD ELASTIC FORCE HERE
       
       #wall collisions - handle all 3 dimensions
       if i < 3 and grid_v[i, j, k][0] < 0:          grid_v[i, j, k][0] = 0 # Boundary conditions
@@ -137,7 +135,13 @@ def substep():
 def reset():
   group_size = n_particles // 1
   for i in range(n_particles):
-    x[i] = [ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size), ti.random() * 0.2 + 0.05 + 0.32 * (i // group_size), ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size)]
+    # This is currently creating 2 cubes
+    if i < 20000:
+      x[i] = [ti.random() * 0.2 + 0.25 + 0.10 * (i // group_size), ti.random() * 0.2 + 0.05 + 0.32 * (i // group_size), ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size)]
+      material[i] = 0
+    else:
+      x[i] = [ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size), ti.random() * 0.2 + 0.5 + 0.32 * (i // group_size), ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size)]
+      material[i] = 1
     x_2d[i] = [x[i][0], x[i][1]]
     #material[i] = i // group_size # 0: fluid 1: jelly 2: snow
     v[i] = [0, 0, 0]
@@ -147,8 +151,8 @@ def reset():
   
 print("[Hint] Use WSAD/arrow keys to control gravity. Use left/right mouse bottons to attract/repel. Press R to reset.")
 gui = ti.GUI("Explicit MPM", res=768, background_color=0x112F41)
-reset()
-gravity[None] = [0, 0, 0]
+reset() # Call reset for the first time
+gravity[None] = [0, -1, 0]
 
 for frame in range(20000):
   if gui.get_event(ti.GUI.PRESS):
