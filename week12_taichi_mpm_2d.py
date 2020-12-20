@@ -3,16 +3,18 @@ import numpy as np
 
 ti.init(arch=ti.gpu) # Try to run on GPU
 
-quality = 1 # Use a larger value for higher-res simulations - setting this to 4 gives us 144000 particles
-n_particles, n_grid = 40000 * quality ** 2, 128 * quality
+quality = 1 # Use a larger value for higher-res simulations
+bunny_nodes = 0 # Number of nodes in the bunny OBJ mesh
+n_particles, n_grid = 72027 * 2, 128 * quality#120000 * quality ** 2, 128 * quality
 dx, inv_dx = 1 / n_grid, float(n_grid)
 dt = 1e-4 / quality
 p_vol, p_rho = (dx * 0.5)**2, 1
 p_mass = p_vol * p_rho
-E, nu = 1e3, 0.2 # Young's modulus and Poisson's ratio
+E, nu = 1e3, 0.3 # Young's modulus and Poisson's ratio
 mu_0, lambda_0 = E / (2 * (1 + nu)), E * nu / ((1+nu) * (1 - 2 * nu)) # Lame parameters - may change these later to model other materials
 
 x = ti.Vector.field(3, dtype=float, shape=n_particles) # position
+host_x = ti.Vector.field(3, dtype=float, shape=n_particles)
 x_2d = ti.Vector.field(2, dtype=float, shape=n_particles) # 2d positions - this is necessary for circle visualization
 v = ti.Vector.field(3, dtype=float, shape=n_particles) # velocity
 C = ti.Matrix.field(3, 3, dtype=float, shape=n_particles) # affine velocity field
@@ -136,21 +138,51 @@ def reset():
   group_size = n_particles // 1
   for i in range(n_particles):
     # This is currently creating 2 cubes
-    if i < 20000:
-      x[i] = [ti.random() * 0.2 + 0.25 + 0.10 * (i // group_size), ti.random() * 0.2 + 0.05 + 0.32 * (i // group_size), ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size)]
+    x[i] = [host_x[i][0], host_x[i][1], host_x[i][2]]
+    if i < bunny_nodes:
+      #x[i] = [ti.random() * 0.2 + 0.25 + 0.10 * (i // group_size), ti.random() * 0.2 + 0.05 + 0.32 * (i // group_size), ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size)]
+      #material[i] = 0
+      #x[i] = [host_x[i][0], host_x[i][1], host_x[i][2]]
       material[i] = 0
+      v[i] = [0.8, -0.3, 0]
     else:
-      x[i] = [ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size), ti.random() * 0.2 + 0.5 + 0.32 * (i // group_size), ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size)]
+      #x[i] = [ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size), ti.random() * 0.2 + 0.05 + 0.32 * (i // group_size), ti.random() * 0.2 + 0.15 + 0.10 * (i // group_size)]
       material[i] = 1
+      v[i] = [-0.8, 0.9, 0]
     x_2d[i] = [x[i][0], x[i][1]]
     #material[i] = i // group_size # 0: fluid 1: jelly 2: snow
-    v[i] = [0, 0, 0]
     F[i] = ti.Matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
     Jp[i] = 1
     C[i] = ti.Matrix.zero(float, 3, 3)
   
 print("[Hint] Use WSAD/arrow keys to control gravity. Use left/right mouse bottons to attract/repel. Press R to reset.")
 gui = ti.GUI("Explicit MPM", res=768, background_color=0x112F41)
+
+# Load the bunny mesh
+obj_height = 1
+# create temporary host numpy arrays
+#host_x = np.zeros((n_particles, 3), dtype=float)
+
+f = open("bunny.obj", "r") # This has 72027 vertices
+for line in f:
+  # Tokenize the line, we only care about lines of 5 tokens - "v (space) (x_pos) (y_pos) (z_pos)"
+  tokens = line.split(' ')
+  if len(tokens) != 5:
+     continue
+  if tokens[0] == 'v':
+    # Write the position
+    # We only allow positive coordinates for initial positions
+    # We need to transform this mesh - scale it down and then translate each node
+    host_x[bunny_nodes][0] = float(tokens[2]) * 0.2 + 0.2
+    host_x[bunny_nodes][1] = float(tokens[3]) * 0.2 + 0.6
+    host_x[bunny_nodes][2] = float(tokens[4][:-1]) * 0.2 + 0.2
+    bunny_nodes += 1
+
+# Copy the second bunny
+for i in range(bunny_nodes):
+    host_x[bunny_nodes + i][0] = host_x[i][0] + 0.5
+    host_x[bunny_nodes + i][1] = host_x[i][1] - 0.4
+    host_x[bunny_nodes + i][2] = host_x[i][2]
 reset() # Call reset for the first time
 gravity[None] = [0, -1, 0]
 
