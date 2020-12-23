@@ -131,7 +131,6 @@ def reset():
   group_size = n_particles // 1
   for i in range(n_particles):
     # This is currently creating 2 cubes
-    #x[i] = [host_x[i][0], host_x[i][1], host_x[i][2]]
     if i < n_particles // 2:
       x[i] = [ti.random() * 0.2 + 0.25 + 0.10 * (i // group_size), ti.random() * 0.2 + 0.5 + 0.32 * (i // group_size), ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size)]
       material[i] = 0
@@ -145,31 +144,8 @@ def reset():
     Jp[i] = 1
     C[i] = ti.Matrix.zero(float, 3, 3)
   
-print("[Hint] Use WSAD/arrow keys to control gravity. Use left/right mouse bottons to attract/repel. Press R to reset.")
+print("[Hint] Use WSAD/arrow keys to control gravity. Press R to reset.")
 gui = ti.GUI("Explicit MPM", res=768, background_color=0x112F41)
-
-# Load the bunny mesh
-
-# f = open("bunny.obj", "r") # This has 72027 vertices
-# for line in f:
-#   # Tokenize the line, we only care about lines of 5 tokens - "v (space) (x_pos) (y_pos) (z_pos)"
-#   tokens = line.split(' ')
-#   if len(tokens) != 5:
-#      continue
-#   if tokens[0] == 'v':
-#     # Write the position
-#     # We only allow positive coordinates for initial positions
-#     # We need to transform this mesh - scale it down and then translate each node
-#     host_x[bunny_nodes][0] = float(tokens[2]) * 0.2 + 0.2
-#     host_x[bunny_nodes][1] = float(tokens[3]) * 0.2 + 0.6
-#     host_x[bunny_nodes][2] = float(tokens[4][:-1]) * 0.2 + 0.2
-#     bunny_nodes += 1
-
-# # Copy the second bunny
-# for i in range(bunny_nodes):
-#     host_x[bunny_nodes + i][0] = host_x[i][0] + 0.5
-#     host_x[bunny_nodes + i][1] = host_x[i][1] - 0.4
-#     host_x[bunny_nodes + i][2] = host_x[i][2]
 
 reset() # Call reset for the first time
 gravity[None] = [0, -1, 0] # set initial gravity direction to -y
