@@ -3,11 +3,10 @@ import numpy as np
 
 ti.init(arch=ti.gpu) # Try to run on GPU
 
-quality = 1 # Use a larger value for higher-res simulations
-bunny_nodes = 0 # Number of nodes in the bunny OBJ mesh
-n_particles, n_grid = 72027 * 2, 128 * quality#120000 * quality ** 2, 128 * quality
+bunny_nodes = 0 # Number of nodes in the bunny OBJ mesh (not used in two_cubes.py)
+n_particles, n_grid = 72027 * 2, 128
 dx, inv_dx = 1 / n_grid, float(n_grid)
-dt = 1e-4 / quality
+dt = 1e-4
 p_vol, p_rho = (dx * 0.5)**2, 1
 p_mass = p_vol * p_rho
 E, nu = 1e3, 0.3 # Young's modulus and Poisson's ratio
@@ -23,9 +22,7 @@ material = ti.field(dtype=int, shape=n_particles) # material id
 Jp = ti.field(dtype=float, shape=n_particles) # plastic deformation
 grid_v = ti.Vector.field(3, dtype=float, shape=(n_grid, n_grid, n_grid)) # grid node momentum/velocity
 grid_m = ti.field(dtype=float, shape=(n_grid, n_grid, n_grid)) # grid node mass
-gravity = ti.Vector.field(3, dtype=float, shape=())
-attractor_strength = ti.field(dtype=float, shape=())
-attractor_pos = ti.Vector.field(3, dtype=float, shape=())
+gravity = ti.Vector.field(3, dtype=float, shape=()) # gravity
 
 @ti.func 
 def kirchoff_FCR(F, R, J, mu, la):
@@ -91,10 +88,6 @@ def substep():
       # Step 5: Apply gravity on grid
       grid_v[i, j, k] += dt * gravity[None] * 9.8 # gravity
       
-      #add force from mouse
-      #dist = attractor_pos[None] - dx * ti.Vector([i, j, k])
-      #grid_v[i, j, k] += dist / (0.01 + dist.norm()) * attractor_strength[None] * dt * 100
-      
       #wall collisions - handle all 3 dimensions
       if i < 3 and grid_v[i, j, k][0] < 0:          grid_v[i, j, k][0] = 0 # Boundary conditions
       if i > n_grid - 3 and grid_v[i, j, k][0] > 0: grid_v[i, j, k][0] = 0
@@ -138,19 +131,16 @@ def reset():
   group_size = n_particles // 1
   for i in range(n_particles):
     # This is currently creating 2 cubes
-    x[i] = [host_x[i][0], host_x[i][1], host_x[i][2]]
-    if i < bunny_nodes:
-      #x[i] = [ti.random() * 0.2 + 0.25 + 0.10 * (i // group_size), ti.random() * 0.2 + 0.05 + 0.32 * (i // group_size), ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size)]
-      #material[i] = 0
-      #x[i] = [host_x[i][0], host_x[i][1], host_x[i][2]]
+    #x[i] = [host_x[i][0], host_x[i][1], host_x[i][2]]
+    if i < n_particles // 2:
+      x[i] = [ti.random() * 0.2 + 0.25 + 0.10 * (i // group_size), ti.random() * 0.2 + 0.5 + 0.32 * (i // group_size), ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size)]
       material[i] = 0
-      v[i] = [0.8, -0.3, 0]
+      v[i] = [0, 0, 0]
     else:
-      #x[i] = [ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size), ti.random() * 0.2 + 0.05 + 0.32 * (i // group_size), ti.random() * 0.2 + 0.15 + 0.10 * (i // group_size)]
+      x[i] = [ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size), ti.random() * 0.2 + 0.05 + 0.32 * (i // group_size), ti.random() * 0.2 + 0.3 + 0.10 * (i // group_size)]
       material[i] = 1
-      v[i] = [-0.8, 0.9, 0]
+      v[i] = [0, 0, 0]
     x_2d[i] = [x[i][0], x[i][1]]
-    #material[i] = i // group_size # 0: fluid 1: jelly 2: snow
     F[i] = ti.Matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
     Jp[i] = 1
     C[i] = ti.Matrix.zero(float, 3, 3)
@@ -159,52 +149,53 @@ print("[Hint] Use WSAD/arrow keys to control gravity. Use left/right mouse botto
 gui = ti.GUI("Explicit MPM", res=768, background_color=0x112F41)
 
 # Load the bunny mesh
-obj_height = 1
-# create temporary host numpy arrays
-#host_x = np.zeros((n_particles, 3), dtype=float)
 
-f = open("bunny.obj", "r") # This has 72027 vertices
-for line in f:
-  # Tokenize the line, we only care about lines of 5 tokens - "v (space) (x_pos) (y_pos) (z_pos)"
-  tokens = line.split(' ')
-  if len(tokens) != 5:
-     continue
-  if tokens[0] == 'v':
-    # Write the position
-    # We only allow positive coordinates for initial positions
-    # We need to transform this mesh - scale it down and then translate each node
-    host_x[bunny_nodes][0] = float(tokens[2]) * 0.2 + 0.2
-    host_x[bunny_nodes][1] = float(tokens[3]) * 0.2 + 0.6
-    host_x[bunny_nodes][2] = float(tokens[4][:-1]) * 0.2 + 0.2
-    bunny_nodes += 1
+# f = open("bunny.obj", "r") # This has 72027 vertices
+# for line in f:
+#   # Tokenize the line, we only care about lines of 5 tokens - "v (space) (x_pos) (y_pos) (z_pos)"
+#   tokens = line.split(' ')
+#   if len(tokens) != 5:
+#      continue
+#   if tokens[0] == 'v':
+#     # Write the position
+#     # We only allow positive coordinates for initial positions
+#     # We need to transform this mesh - scale it down and then translate each node
+#     host_x[bunny_nodes][0] = float(tokens[2]) * 0.2 + 0.2
+#     host_x[bunny_nodes][1] = float(tokens[3]) * 0.2 + 0.6
+#     host_x[bunny_nodes][2] = float(tokens[4][:-1]) * 0.2 + 0.2
+#     bunny_nodes += 1
 
-# Copy the second bunny
-for i in range(bunny_nodes):
-    host_x[bunny_nodes + i][0] = host_x[i][0] + 0.5
-    host_x[bunny_nodes + i][1] = host_x[i][1] - 0.4
-    host_x[bunny_nodes + i][2] = host_x[i][2]
+# # Copy the second bunny
+# for i in range(bunny_nodes):
+#     host_x[bunny_nodes + i][0] = host_x[i][0] + 0.5
+#     host_x[bunny_nodes + i][1] = host_x[i][1] - 0.4
+#     host_x[bunny_nodes + i][2] = host_x[i][2]
+
 reset() # Call reset for the first time
-gravity[None] = [0, -1, 0]
+gravity[None] = [0, -1, 0] # set initial gravity direction to -y
 
-for frame in range(20000):
+frame_idx = 0 # frame obj index
+
+for frame in range(1000):
   if gui.get_event(ti.GUI.PRESS):
-    if gui.event.key == 'r': reset()
+    if gui.event.key == 'r': 
+      reset()
+      frame_idx = 0 # reset the frame index as well
     elif gui.event.key in [ti.GUI.ESCAPE, ti.GUI.EXIT]: break
-  if gui.event is not None: gravity[None] = [0, 0, 0] # if had any event
+  if gui.event is not None: gravity[None] = [0, -1, 0] # if had any event
   if gui.is_pressed(ti.GUI.LEFT,  'a'): gravity[None][0] = -1
   if gui.is_pressed(ti.GUI.RIGHT, 'd'): gravity[None][0] = 1
   if gui.is_pressed(ti.GUI.UP,    'w'): gravity[None][1] = 1
   if gui.is_pressed(ti.GUI.DOWN,  's'): gravity[None][1] = -1
-  mouse = gui.get_cursor_pos()
-  gui.circle((mouse[0], mouse[1]), color=0x336699, radius=15)
-  attractor_pos[None] = [mouse[0], mouse[1], 1]
-  attractor_strength[None] = 0
-  if gui.is_pressed(ti.GUI.LMB):
-    attractor_strength[None] = 1
-  if gui.is_pressed(ti.GUI.RMB):
-    attractor_strength[None] = -1
   for s in range(int(2e-3 // dt)):
     substep()
   colors = np.array([0xED553B,0x068587,0xEEEEF0], dtype=np.uint32)
   gui.circles(x_2d.to_numpy(), radius=1.5, color=colors[material.to_numpy()])
+  # Write the positions into OBJ file
+  #f = open('frames/frame' + str(frame_idx) + '.obj', 'w')
+  #for p in x.to_numpy():
+    #f.write("v %f %f %f\n" % (p[0], p[1], p[2]))
+    #f.write('v ' + str(x[p][0]) + ' ' + str(x[p][1]) + ' ' + str(x[p][2]) + '\n')
+  #f.close()
+  frame_idx += 1
   gui.show() # Change to gui.show(f'{frame:06d}.png') to write images to disk
