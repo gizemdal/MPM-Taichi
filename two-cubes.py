@@ -19,7 +19,6 @@ v = ti.Vector.field(3, dtype=float, shape=n_particles) # velocity
 C = ti.Matrix.field(3, 3, dtype=float, shape=n_particles) # affine velocity field
 F = ti.Matrix.field(3, 3, dtype=float, shape=n_particles) # deformation gradient
 material = ti.field(dtype=int, shape=n_particles) # material id
-Jp = ti.field(dtype=float, shape=n_particles) # plastic deformation
 grid_v = ti.Vector.field(3, dtype=float, shape=(n_grid, n_grid, n_grid)) # grid node momentum/velocity
 grid_m = ti.field(dtype=float, shape=(n_grid, n_grid, n_grid)) # grid node mass
 gravity = ti.Vector.field(3, dtype=float, shape=()) # gravity
@@ -40,9 +39,9 @@ def substep():
     
     # First for particle p, compute base index
     base = (x[p] * inv_dx - 0.5).cast(int)
-    fx = x[p] * inv_dx - base.cast(float)
     
     # Quadratic kernels  [http://mpm.graphics   Eqn. 123, with x=fx, fx-1,fx-2]
+    fx = x[p] * inv_dx - base.cast(float)
     w = [0.5 * (1.5 - fx) ** 2, 0.75 - (fx - 1) ** 2, 0.5 * (fx - 0.5) ** 2]
     dw = [fx - 1.5, -2.0 * (fx - 1), fx - 0.5]
 
@@ -51,11 +50,9 @@ def substep():
     U, sig, V = ti.svd(F[p])
     J = 1.0
 
+    # Compute volume change J from Sigma matrix diagonal entries
     for d in ti.static(range(3)):
-      new_sig = sig[d, d]
-      Jp[p] *= sig[d, d] / new_sig
-      sig[d, d] = new_sig
-      J *= new_sig
+      J *= sig[d, d]
     
     #Compute Kirchoff Stress
     kirchoff = kirchoff_FCR(F[p], U@V.transpose(), J, mu, la)
@@ -98,13 +95,19 @@ def substep():
   
   # grid to particle (G2P)
   for p in x: 
+
+    # Compute base index
     base = (x[p] * inv_dx - 0.5).cast(int)
+
+    # Quadratic kernels  [http://mpm.graphics   Eqn. 123, with x=fx, fx-1,fx-2]
     fx = x[p] * inv_dx - base.cast(float)
     w = [0.5 * (1.5 - fx) ** 2, 0.75 - (fx - 1.0) ** 2, 0.5 * (fx - 0.5) ** 2]
     dw = [fx - 1.5, -2.0 * (fx - 1), fx - 0.5]
+
     new_v = ti.Vector.zero(float, 3)
     new_C = ti.Matrix.zero(float, 3, 3)
     new_F = ti.Matrix.zero(float, 3, 3)
+
     for i, j, k in ti.static(ti.ndrange(3, 3, 3)): # loop over 3x3x3 grid node neighborhood
       dpos = ti.Vector([i, j, k]).cast(float) - fx
       g_v = grid_v[base + ti.Vector([i, j, k])]
@@ -128,7 +131,7 @@ def substep():
 
 @ti.kernel
 def reset():
-  group_size = n_particles // 1
+  group_size = n_particles
   for i in range(n_particles):
     # This is currently creating 2 cubes
     if i < n_particles // 2:
@@ -141,7 +144,6 @@ def reset():
       v[i] = [0, 0, 0]
     x_2d[i] = [x[i][0], x[i][1]]
     F[i] = ti.Matrix([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
-    Jp[i] = 1
     C[i] = ti.Matrix.zero(float, 3, 3)
   
 print("[Hint] Use WSAD/arrow keys to control gravity. Press R to reset.")
