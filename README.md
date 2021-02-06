@@ -2,6 +2,8 @@
 
 <a name="description"/> 
 
+<img src="gifs/bunny_taichi.gif" width = 350> <img src="gifs/bunny_houdini.gif" width = 350>
+
 ## Project Description
 
 This is the final project for Physically Based Animation (CIS-563), where I used the 2D Taichi MPM sample code provided by Dr. Jiang as a basis to implement a 3D MPM simulation of
