@@ -2,7 +2,7 @@
 
 <a name="description"/> 
 
-<img src="gifs/bunny_taichi.gif" width = 350> <img src="gifs/bunny_houdini.gif" width = 350>
+<img src="gifs/bunny_taichi.gif" width = 350> <img src="gifs/bunny_houdini2.gif" width = 350>
 
 ## Project Description
 
