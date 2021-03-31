@@ -1,4 +1,4 @@
-# Material Point Method Jello Simulation with Taichi
+# Material Point Method Simulation with Taichi
 
 <a name="description"/> 
 
