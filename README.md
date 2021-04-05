@@ -6,7 +6,7 @@
 
 ## Project Description
 
-This is the final project for Physically Based Animation (CIS-563), where I used the 2D Taichi MPM sample code provided by Dr. Jiang as a basis to implement a 3D MPM simulation of
+This is the final project for Physically Based Animation (CIS-563), where I used the 2D Taichi MPM sample code provided by [Dr. Jiang](https://scholar.google.com/citations?user=jTivVMEAAAAJ&hl=en) as a basis to implement a 3D MPM simulation of
 elastic material.
 
 You can check out the report included in this repository to learn more about the code structure and the MPM algorithm.
