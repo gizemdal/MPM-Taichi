@@ -6,8 +6,7 @@
 
 ## Project Description
 
-This is the final project for Physically Based Animation (CIS-563), where I used the 2D Taichi MPM sample code provided by [Dr. Jiang](https://scholar.google.com/citations?user=jTivVMEAAAAJ&hl=en) as a basis to implement a 3D MPM simulation of
-elastic material.
+This is the final project for Physically Based Animation (CIS-563), where I used a 2D [Taichi](https://github.com/taichi-dev/taichi) MPM [example code](https://github.com/taichi-dev/taichi/blob/master/examples/mpm128.py) as a basis to implement a 3D MPM simulation of elastic material.
 
 You can check out the report included in this repository to learn more about the code structure and the MPM algorithm.
 
@@ -15,7 +14,7 @@ You can check out the report included in this repository to learn more about the
 
 ## Setup Overview
 
-The MPM simulation for this assignment is coded in Taichi/Python3.8 on the Windows 10 platform. In order to install Taichi I followed the instructions on the Taichi website. When I was setting it up on my environment, I had to additionally install Python3.8 and the pip installer that was recommended on the console to make the Taichi code compile and run. If you don’t have it already, you must also have the numpy library installed before you can run this program. I additionally installed Houdini Apprentice on Windows to import the OBJ sequences of MPM particles and create a rendered demo, although this is not necessary to run the Taichi program itself. Without this 3D render, you should still be able to see a 2D visualization of the 3D simulation on the popup GUI window once you run the program. When you’re ready to run the code, simply cd into the same directory where the two-cubes.py file exists and then run the python two-cubes.py command from Visual Studio Code (or the Git Bash terminal if you do not have VSC).
+The MPM simulation for this assignment is coded in Taichi/Python3.8 on the Windows 10 platform. In order to install Taichi I followed the instructions [here](https://taichi.graphics). When I was setting it up on my environment, I had to additionally install Python3.8 and the pip installer that was recommended on the console to make the Taichi code compile and run. If you don’t have it already, you must also have the numpy library installed before you can run this program. I additionally installed Houdini Apprentice on Windows to import the OBJ sequences of MPM particles and create a rendered demo, although this is not necessary to run the Taichi program itself. Without this 3D render, you should still be able to see a 2D visualization of the 3D simulation on the popup GUI window once you run the program. When you’re ready to run the code, simply cd into the same directory where the two-cubes.py file exists and then run the python two-cubes.py command from Visual Studio Code (or the Git Bash terminal if you do not have VSC).
 
 <a name="results"/>
 
