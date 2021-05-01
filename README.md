@@ -8,7 +8,7 @@
 
 This is the final project for Physically Based Animation (CIS-563) taught by Dr. Chenfanfu Jiang, where I used a 2D [Taichi](https://github.com/taichi-dev/taichi) MPM [example code](https://github.com/taichi-dev/taichi/blob/master/examples/mpm128.py) as a basis to implement a 3D MPM simulation of elastic material.
 
-You can check out the report included in this repository to learn more about the code structure and the MPM algorithm.
+You can check out the report included in this repository to learn more about the code structure and the MPM algorithm. You can also watch the demo video [here](https://vimeo.com/516594320).
 
 <a name="overview"/>
 
